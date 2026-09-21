@@ -1,3 +1,5 @@
+import { isAvailable } from "./availability.ts";
+
 export interface StatusChange {
   changeId: string;
   serial: string;
@@ -16,22 +18,7 @@ export interface Deps {
   retryMs?: number;
 }
 
-const BLOCKING_FACTORS = new Set([
-  "PILOT_REVIEW",
-  "LOW_BATTERY",
-  "HARDWARE_FAULT",
-  "MAINTENANCE",
-  "OUT_OF_ZONE",
-]);
-
 const CHANGE_HISTORY = 5000;
-
-export function isAvailable(change: Pick<StatusChange, "status" | "limitingFactors">): boolean {
-  return (
-    change.status === "ONLINE" &&
-    !change.limitingFactors.some((factor) => BLOCKING_FACTORS.has(factor))
-  );
-}
 
 export function parseChange(serial: string, changeId: unknown, body: unknown): StatusChange | null {
   if (typeof body !== "object" || body === null) return null;

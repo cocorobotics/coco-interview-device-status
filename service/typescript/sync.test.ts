@@ -1,41 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import {
-  createSynchroniser,
-  isAvailable,
-  parseChange,
-  type Deps,
-  type StatusChange,
-} from "./sync.ts";
-
-interface RuleCase {
-  name: string;
-  status: StatusChange["status"];
-  limitingFactors: string[];
-  available: boolean;
-}
-
-const ruleCases: RuleCase[] = [
-  { name: "online and unencumbered", status: "ONLINE", limitingFactors: [], available: true },
-  { name: "online and held for pilot review", status: "ONLINE", limitingFactors: ["PILOT_REVIEW"], available: false },
-  { name: "online and below the dispatch threshold", status: "ONLINE", limitingFactors: ["LOW_BATTERY"], available: false },
-  { name: "online with a critical fault", status: "ONLINE", limitingFactors: ["HARDWARE_FAULT"], available: false },
-  { name: "online but pulled from service", status: "ONLINE", limitingFactors: ["MAINTENANCE"], available: false },
-  { name: "online outside its hub area", status: "ONLINE", limitingFactors: ["OUT_OF_ZONE"], available: false },
-  { name: "online with an informational factor only", status: "ONLINE", limitingFactors: ["HEAVY_RAIN"], available: true },
-  { name: "online with an informational and a blocking factor", status: "ONLINE", limitingFactors: ["HEAVY_RAIN", "LOW_BATTERY"], available: false },
-  { name: "offline and unencumbered", status: "OFFLINE", limitingFactors: [], available: false },
-  { name: "offline with an informational factor only", status: "OFFLINE", limitingFactors: ["HEAVY_RAIN"], available: false },
-];
-
-for (const scenario of ruleCases) {
-  test(`given a robot ${scenario.name}, when availability is decided, then it is ${scenario.available}`, () => {
-    assert.equal(
-      isAvailable({ status: scenario.status, limitingFactors: scenario.limitingFactors }),
-      scenario.available,
-    );
-  });
-}
+import { createSynchroniser, parseChange, type Deps, type StatusChange } from "./sync.ts";
 
 test("given a fleet call with no change id, when the change is parsed, then it is named after the robot and the observation", () => {
   const change = parseChange("C10393", undefined, {

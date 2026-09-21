@@ -1,4 +1,5 @@
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
+import { auditAvailabilityRule } from "./availability.ts";
 import {
   createSynchroniser,
   parseChange,
@@ -88,6 +89,24 @@ async function publish(change: StatusChange): Promise<boolean> {
   }
 }
 
+async function auditFleetRule(): Promise<void> {
+  try {
+    const disagreements = await auditAvailabilityRule(post, config.fleetUrl);
+    if (disagreements.length === 0) {
+      console.log("fleet /v1/availability agrees with the documented rule");
+      return;
+    }
+
+    for (const { state, ours, theirs } of disagreements) {
+      console.warn(
+        `fleet /v1/availability disagrees: status=${state.status} factors=${state.limitingFactors} documented=${ours} fleet=${theirs}`,
+      );
+    }
+  } catch (err) {
+    console.warn(`could not audit the fleet's availability rule: ${err}`);
+  }
+}
+
 export const server = createServer(async (req, res) => {
   try {
     const path = (req.url ?? "").split("?")[0];
@@ -114,6 +133,7 @@ export const server = createServer(async (req, res) => {
 if (import.meta.main) {
   server.listen(config.port, () => {
     console.log(`listening on :${config.port}`);
+    void auditFleetRule();
   });
 }
 
