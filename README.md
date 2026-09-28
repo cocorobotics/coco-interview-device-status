@@ -155,18 +155,16 @@ believes. 404 before anything has been written.
 ## Commands
 
 ```
-make run go       # start your consumer. also typescript, python, csharp, java
-make test go      # run your tests
-make verify       # DeliverMe's conformance suite
-make state        # queue depth, what the fleet published, what DeliverMe received
-make reset        # clear DeliverMe's state and purge the queues
-make traffic-off  # stop the fleet publishing, for a quiet read. traffic-on resumes
-make logs         # logs from the fleet and DeliverMe services
-make shell        # a terminal in the container, for a package install
+make run go              # start your consumer. also typescript, python, csharp, java
+make test go             # your unit tests
+make test go integration # your integration tests
+make test go e2e         # your end to end tests, against the whole stack
+make state               # queue depth, what the fleet published, what DeliverMe received
+make reset               # clear DeliverMe's state and purge the queues
+make traffic-off         # stop the fleet publishing, for a quiet read. traffic-on resumes
+make logs                # logs from the fleet and DeliverMe services
+make shell               # a terminal in the container, for a package install
 ```
-
-`make verify` is the suite DeliverMe runs against us before a release. It is a
-release gate, not a specification.
 
 Everything runs in a container that shares a network with the broker and the two
 services, so the `localhost` addresses above work exactly as written. Your code
@@ -174,25 +172,46 @@ lives in this directory on the host, so your editor works normally. The fleet an
 DeliverMe services are black boxes: their source is not in this repo, this page
 is everything we know about them, and they behave the same way every time.
 
+## Testing
+
+Each scaffold comes with one starter test per level. They show where tests live
+and how to reach the stack from them. What you test, and at which level, is up
+to you.
+
+| Level | Exercises | Needs |
+|---|---|---|
+| unit | your code on its own, with anything external faked | the dev container only |
+| integration | your code against one real dependency: the broker, the fleet or DeliverMe | `make up` |
+| e2e | the whole path: a change published to the fleet exchange, through your consumer, to what DeliverMe ends up believing | `make up`, and `make run` stopped |
+
+`make test <lang> e2e` starts your consumer itself, runs the e2e tests against
+it, and stops it afterwards, so stop `make run` first. If a test fails, the tail
+of your consumer's output is printed after the results. The starter e2e test
+fails until your consumer writes availability to DeliverMe.
+
+These endpoints exist for tests and are not part of either real service:
+
+| Endpoint | Does |
+|---|---|
+| `POST localhost:4001/v1/_debug/traffic` | `{"enabled": false}` stops the fleet publishing, `true` resumes it |
+| `GET localhost:4001/v1/_debug/emitted` | the last 60 changes the fleet published, in publish order |
+| `POST localhost:4002/v1/_debug/reset` | clears everything DeliverMe believes, and its call log |
+| `GET localhost:4002/v1/_debug/calls` | every availability write DeliverMe received, with its status and duration |
+
+The starter e2e test stops traffic, purges the queue and resets DeliverMe before
+it runs, then turns traffic back on.
+
 ## Scaffolds
 
 One per language, with the AMQP client already installed in the container.
 
-| Language | Start | Runs as | `make test <lang>` runs |
-|---|---|---|---|
-| TypeScript / Node | `make run typescript` | `node server.ts` | `node --test` |
-| Go | `make run go` | `go run .` | `go test ./...` |
-| Python | `make run python` | `python3 server.py` | `pytest` |
-| C# | `make run csharp` | `dotnet run` | `dotnet test tests` |
-| Java | `make run java` | `javac && java Server` | JUnit 5 |
+| Language | Start | Runs as | Tests live in | Levels selected by |
+|---|---|---|---|---|
+| TypeScript / Node | `make run typescript` | `node server.ts` | `test/unit`, `test/integration`, `test/e2e` | directory |
+| Go | `make run go` | `go run .` | `*_test.go` next to `main.go` | name: `TestIntegration...`, `TestE2E...`, anything else is unit |
+| Python | `make run python` | `python3 server.py` | `tests/unit`, `tests/integration`, `tests/e2e` | directory |
+| C# | `make run csharp` | `dotnet run` | `tests/`, an xUnit project | `[Trait("Category", "integration")]` or `"e2e"`, none is unit |
+| Java | `make run java` | `javac && java Server` | `*Test.java` next to `Server.java` | JUnit 5 `@Tag("integration")` or `@Tag("e2e")`, none is unit |
 
 The TypeScript one is real TypeScript. Node runs it directly and `tsc --noEmit`
 is on the path.
-
-For C#, `make test csharp` expects a project in `service/csharp/tests`. Create it
-once from `make shell`:
-
-```
-cd service/csharp
-dotnet new xunit -o tests && dotnet add tests reference candidate.csproj
-```

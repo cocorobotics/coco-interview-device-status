@@ -14,7 +14,7 @@ export interface StatusChange {
   observedAt: string;
 }
 
-async function handleStatusChange(msg: ConsumeMessage): Promise<void> {
+export async function handleStatusChange(msg: ConsumeMessage): Promise<void> {
   const change: StatusChange = JSON.parse(msg.content.toString());
 
   console.log(
@@ -43,10 +43,12 @@ async function main(): Promise<void> {
   });
 }
 
-main().catch((err) => {
-  console.error(err);
-  process.exit(1);
-});
+if (import.meta.main) {
+  main().catch((err) => {
+    console.error(err);
+    process.exit(1);
+  });
+}
 
 // --- plumbing, nothing below here is part of the exercise ---
 

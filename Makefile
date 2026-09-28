@@ -1,11 +1,13 @@
 SCAFFOLDS := go typescript python csharp java
+LEVELS := unit integration e2e
 
-.PHONY: pull up down shell logs verify reset state run test traffic-on traffic-off $(SCAFFOLDS)
+.PHONY: pull up down shell logs reset state run test traffic-on traffic-off $(SCAFFOLDS) $(LEVELS)
 
-# 'make run go' passes the language as a second goal, which needs a rule of its own
+# 'make test go e2e' passes the language and level as extra goals, which need rules of their own
 LANGUAGE := $(word 2,$(MAKECMDGOALS))
+LEVEL := $(or $(word 3,$(MAKECMDGOALS)),unit)
 
-$(SCAFFOLDS):
+$(SCAFFOLDS) $(LEVELS):
 	@:
 
 pull:
@@ -21,24 +23,11 @@ up:
 
 run:
 	@test -n "$(LANGUAGE)" || { echo "usage: make run <language>   [$(SCAFFOLDS)]"; exit 1; }
-	@docker compose exec dev bash -lc 'cd "/work/service/$(LANGUAGE)" 2>/dev/null || { echo "no service/$(LANGUAGE) directory"; exit 1; }; \
-	  if [ -f go.mod ]; then exec go run .; \
-	  elif [ -f server.ts ]; then npm install --silent --no-audit --no-fund; exec node server.ts; \
-	  elif [ -f server.py ]; then exec python3 server.py; \
-	  elif [ -f Server.java ]; then javac -cp "$$GSON_JAR:$$AMQP_JAR:$$SLF4J_JARS" *.java && exec java -cp ".:$$GSON_JAR:$$AMQP_JAR:$$SLF4J_JARS" Server; \
-	  elif [ -f candidate.csproj ]; then exec dotnet run; \
-	  else echo "nothing recognisable in service/$(LANGUAGE)"; exit 1; fi'
+	@docker compose exec dev /work/scripts/service.sh run $(LANGUAGE)
 
 test:
-	@test -n "$(LANGUAGE)" || { echo "usage: make test <language>   [$(SCAFFOLDS)]"; exit 1; }
-	@docker compose exec dev bash -lc 'cd "/work/service/$(LANGUAGE)" 2>/dev/null || { echo "no service/$(LANGUAGE) directory"; exit 1; }; \
-	  if [ -f go.mod ]; then exec go test ./...; \
-	  elif [ -f server.ts ]; then npm install --silent --no-audit --no-fund; exec node --test; \
-	  elif [ -f server.py ]; then exec pytest -q; \
-	  elif [ -f Server.java ]; then javac -cp "$$JUNIT_JAR:$$GSON_JAR:$$AMQP_JAR:$$SLF4J_JARS" *.java && exec java -jar "$$JUNIT_JAR" execute --class-path ".:$$GSON_JAR:$$AMQP_JAR:$$SLF4J_JARS" --scan-class-path --details=summary; \
-	  elif [ -f candidate.csproj ]; then \
-	    if [ -d tests ]; then exec dotnet test tests; else echo "no test project yet. from make shell, in service/csharp:"; echo "  dotnet new xunit -o tests && dotnet add tests reference candidate.csproj"; exit 1; fi; \
-	  else echo "nothing recognisable in service/$(LANGUAGE)"; exit 1; fi'
+	@test -n "$(LANGUAGE)" || { echo "usage: make test <language> [unit|integration|e2e]   [$(SCAFFOLDS)]"; exit 1; }
+	@docker compose exec dev /work/scripts/service.sh test $(LANGUAGE) $(LEVEL)
 
 shell:
 	docker compose exec dev bash
@@ -48,9 +37,6 @@ down:
 
 logs:
 	docker compose logs -f stack
-
-verify:
-	@docker compose exec stack /stack verify
 
 reset:
 	@curl -s -X POST http://localhost:4002/v1/_debug/reset > /dev/null

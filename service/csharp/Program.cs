@@ -3,15 +3,7 @@ using System.Text.Json;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
 
-var config = new
-{
-    AmqpUrl = Environment.GetEnvironmentVariable("AMQP_URL") ?? "amqp://guest:guest@localhost:5672/",
-    Queue = Environment.GetEnvironmentVariable("QUEUE") ?? "device-status",
-    FleetUrl = Environment.GetEnvironmentVariable("FLEET_URL") ?? "http://localhost:4001",
-    PartnerUrl = Environment.GetEnvironmentVariable("PARTNER_URL") ?? "http://localhost:4002",
-};
-
-var channel = Amqp.Connect(config.AmqpUrl);
+var channel = Amqp.Connect(Config.AmqpUrl);
 channel.BasicQos(0, 1, false);
 
 var consumer = new EventingBasicConsumer(channel);
@@ -19,7 +11,7 @@ consumer.Received += (_, delivery) =>
 {
     try
     {
-        HandleStatusChange(delivery);
+        Handler.HandleStatusChange(delivery);
         channel.BasicAck(delivery.DeliveryTag, false);
     }
     catch (Exception e)
@@ -29,19 +21,30 @@ consumer.Received += (_, delivery) =>
     }
 };
 
-Console.WriteLine($"consuming {config.Queue}");
-channel.BasicConsume(config.Queue, false, consumer);
+Console.WriteLine($"consuming {Config.Queue}");
+channel.BasicConsume(Config.Queue, false, consumer);
 Thread.Sleep(Timeout.Infinite);
 
-void HandleStatusChange(BasicDeliverEventArgs delivery)
+static class Config
 {
-    var change = JsonSerializer.Deserialize<StatusChange>(delivery.Body.Span, Http.JsonOptions)!;
+    public static readonly string AmqpUrl = Environment.GetEnvironmentVariable("AMQP_URL") ?? "amqp://guest:guest@localhost:5672/";
+    public static readonly string Queue = Environment.GetEnvironmentVariable("QUEUE") ?? "device-status";
+    public static readonly string FleetUrl = Environment.GetEnvironmentVariable("FLEET_URL") ?? "http://localhost:4001";
+    public static readonly string PartnerUrl = Environment.GetEnvironmentVariable("PARTNER_URL") ?? "http://localhost:4002";
+}
 
-    Console.WriteLine(
-        $"change={delivery.BasicProperties.MessageId} serial={change.Serial} status={change.Status} " +
-        $"factors={string.Join(",", change.LimitingFactors)} redelivered={delivery.Redelivered}");
+static class Handler
+{
+    public static void HandleStatusChange(BasicDeliverEventArgs delivery)
+    {
+        var change = JsonSerializer.Deserialize<StatusChange>(delivery.Body.Span, Http.JsonOptions)!;
 
-    // TODO: the steps in the README go here.
+        Console.WriteLine(
+            $"change={delivery.BasicProperties.MessageId} serial={change.Serial} status={change.Status} " +
+            $"factors={string.Join(",", change.LimitingFactors)} redelivered={delivery.Redelivered}");
+
+        // TODO: the steps in the README go here.
+    }
 }
 
 record StatusChange(string Serial, string Status, string[] LimitingFactors, string ObservedAt);
