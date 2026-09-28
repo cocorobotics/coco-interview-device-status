@@ -3,16 +3,19 @@
 ## The problem
 
 Coco's delivery robots take orders from DeliverMe, a food-delivery marketplace.
-DeliverMe's dispatcher only offers an order to a robot it believes is free, and
-it believes whatever we last told it. There is no reconciliation job and no
-polling fallback on their side, so what we write is what they know.
+Today DeliverMe offers us every order, and we reject the ones our robots cannot
+take.
 
-Today nothing tells them. Our Fleet service has just started publishing a message
-every time a robot changes state (goes offline, runs low on battery, gets pulled
-for maintenance), and nothing consumes those messages yet.
+That is about to change. Once this ships to production, DeliverMe's dispatcher
+will only offer an order to a robot we have marked available, and it believes
+whatever we last told it. There is no reconciliation job and no polling fallback
+on their side, so what we write is what they know.
 
-You are building that consumer: the piece of our Integrations service that keeps
-DeliverMe's view of each robot matching whether it can actually take work.
+Our Fleet service has just started publishing a message every time a robot
+changes state (goes offline, runs low on battery, gets pulled for maintenance),
+and nothing consumes those messages yet. You are building that consumer: the
+piece of our Integrations service that keeps DeliverMe's view of each robot
+matching whether it can actually take work.
 
 Getting it wrong costs money in both directions:
 
@@ -47,12 +50,25 @@ another language is fine too, as long as it consumes that queue.
 
 Push a branch and open a pull request. Write the description yourself, there is
 no template. Your interviewer will read it the way they would read a real PR from
-a teammate, before they read the diff. Leave yourself ten minutes for it.
+a teammate who was not in the room, before they read the diff. Alongside what the
+change does, it should say how you would get it into production safely. Leave
+yourself ten minutes for it.
 
-Most people do not finish everything they would want to, and that is fine. How
-you work and what you choose to do first matter more than a complete feature.
-Use whatever tools you normally use, AI included. We will ask you about any part
-of what you produce.
+## What we look at
+
+How you work matters more than a complete feature.
+
+- **What you do first.** Most people do not finish everything they would want
+  to, and that is fine. Decide what matters most, do that first, and say what you
+  left out.
+- **How you handle what this page does not say.** Ask your interviewer anything
+  about the domain. Where you have to assume, say so.
+- **What you checked.** The stack is running and publishing. Check what it
+  actually does, not only what this page says.
+- **How you test it.** Test at the levels you think are worth it, and be ready
+  to say why.
+- **Whether you own it.** Use whatever tools you normally use, AI included. We
+  will ask you about any part of what you produce, whoever typed it.
 
 ---
 
