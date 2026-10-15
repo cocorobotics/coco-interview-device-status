@@ -1,5 +1,5 @@
 SCAFFOLDS := go typescript python csharp java
-LEVELS := unit integration e2e
+LEVELS := unit e2e
 
 .PHONY: pull up down shell logs reset state run test traffic-on traffic-off $(SCAFFOLDS) $(LEVELS)
 
@@ -26,7 +26,7 @@ run:
 	@docker compose exec dev /work/scripts/service.sh run $(LANGUAGE)
 
 test:
-	@test -n "$(LANGUAGE)" || { echo "usage: make test <language> [unit|integration|e2e]   [$(SCAFFOLDS)]"; exit 1; }
+	@test -n "$(LANGUAGE)" || { echo "usage: make test <language> [unit|e2e]   [$(SCAFFOLDS)]"; exit 1; }
 	@docker compose exec dev /work/scripts/service.sh test $(LANGUAGE) $(LEVEL)
 
 shell:

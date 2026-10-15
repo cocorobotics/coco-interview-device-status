@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Runs inside the dev container. Usage: service.sh run <language> | service.sh test <language> [unit|integration|e2e]
+# Runs inside the dev container. Usage: service.sh run <language> | service.sh test <language> [unit|e2e]
 set -euo pipefail
 
 action=${1:-}
@@ -15,7 +15,7 @@ start() {
     go) exec go run . ;;
     typescript) npm install --silent --no-audit --no-fund; exec node server.ts ;;
     python) exec python3 server.py ;;
-    java) javac -cp "$JUNIT_JAR:$java_cp" *.java && exec java -cp ".:$java_cp" Server ;;
+    java) rm -f ./*.class; javac -cp "$JUNIT_JAR:$java_cp" *.java && exec java -cp ".:$java_cp" Server ;;
     csharp) exec dotnet run --project hangry-hippo.csproj ;;
     *) echo "unknown language: $language"; exit 1 ;;
   esac
@@ -23,8 +23,7 @@ start() {
 
 run_tests() {
   case "$language:$level" in
-    go:unit) go test -count=1 -skip '^Test(Integration|E2E)' ./... ;;
-    go:integration) go test -count=1 -run '^TestIntegration' ./... ;;
+    go:unit) go test -count=1 -skip '^TestE2E' ./... ;;
     go:e2e) go test -count=1 -run '^TestE2E' ./... ;;
 
     typescript:*) npm install --silent --no-audit --no-fund; node --test "test/$level/**/*.test.ts" ;;
@@ -32,14 +31,14 @@ run_tests() {
     python:*) pytest -q "tests/$level" ;;
 
     java:*)
-      javac -cp "$JUNIT_JAR:$java_cp" *.java
+      rm -f ./*.class; javac -cp "$JUNIT_JAR:$java_cp" *.java
       case "$level" in
-        unit) tags=(--exclude-tag integration --exclude-tag e2e) ;;
+        unit) tags=(--exclude-tag e2e) ;;
         *) tags=(--include-tag "$level") ;;
       esac
       java -jar "$JUNIT_JAR" execute --class-path ".:$java_cp" --scan-class-path "${tags[@]}" --details=tree --disable-banner ;;
 
-    csharp:unit) dotnet test tests --filter 'Category!=integration&Category!=e2e' ;;
+    csharp:unit) dotnet test tests --filter 'Category!=e2e' ;;
     csharp:*) dotnet test tests --filter "Category=$level" ;;
 
     *) echo "unknown language: $language"; exit 1 ;;
@@ -85,5 +84,5 @@ e2e() {
 case "$action" in
   run) start ;;
   test) if [ "$level" = e2e ]; then e2e; else run_tests; fi ;;
-  *) echo "usage: service.sh run <language> | service.sh test <language> [unit|integration|e2e]"; exit 1 ;;
+  *) echo "usage: service.sh run <language> | service.sh test <language> [unit|e2e]"; exit 1 ;;
 esac

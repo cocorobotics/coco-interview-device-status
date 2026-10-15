@@ -11,6 +11,16 @@ each robot can take work, and writes that to HangryHippo's Supply API.
 **Status:** scaffolding only. Each language skeleton connects, consumes, parses
 and acks, and does nothing else yet.
 
+```mermaid
+flowchart LR
+  Robots -->|telemetry| Fleet
+  Fleet -->|device.status.changed| Q[(device-status queue)]
+  Q --> S[hangry-hippo-integration<br/>this service]
+  S -->|serial to vehicle id| Fleet
+  S -->|PUT availability| HH[HangryHippo Supply API]
+  HH -->|offers runs to available vehicles| D[HangryHippo dispatcher]
+```
+
 ## Getting started
 
 ```
@@ -20,21 +30,13 @@ make run go       # or typescript, python, csharp, java
 
 We have not settled on a language for this service, so there is a skeleton for
 each one we run elsewhere. They are equivalent; use the one you are most
-productive in. Starting from scratch in another language is fine too, as long as
-it consumes the `device-status` queue.
+productive in.
 
 ## The device-status queue
 
 RabbitMQ on `localhost:5672`, management UI on
-[localhost:15672](http://localhost:15672) with `guest` / `guest`. The exchange,
-queue and dead letter path already exist, so you only have to consume.
-
-```
-exchange     fleet                  (topic)
-routing key  device.status.changed
-queue        device-status          (durable, dead letters to fleet.dlx)
-dead letter  device-status.dlq
-```
+[localhost:15672](http://localhost:15672) with `guest` / `guest`. The
+`device-status` queue already exists, so you only have to consume.
 
 A message:
 
@@ -52,7 +54,8 @@ content_type: application/json
 
 `status` is `ONLINE` or `OFFLINE`. `limitingFactors` is a possibly empty list of
 reasons the robot cannot take work. `message_id` identifies the state change;
-`observedAt` is when the fleet saw it.
+`observedAt` is when the fleet saw it, as an RFC 3339 timestamp in UTC with
+millisecond precision.
 
 Delivery semantics, worth reading before you design around them:
 
@@ -117,7 +120,6 @@ believes. 404 before anything has been written.
 ```
 make run go              # start the consumer. also typescript, python, csharp, java
 make test go             # unit tests
-make test go integration # integration tests
 make test go e2e         # end to end tests, against the whole stack
 make state               # queue depth, what the fleet published, what HangryHippo received
 make reset               # clear HangryHippo's state and purge the queues
@@ -126,11 +128,10 @@ make logs                # logs from the Fleet emulator and the HangryHippo sand
 make shell               # a terminal in the container, for a package install
 ```
 
-Everything runs in a container that shares a network with the broker and the two
-services, so the `localhost` addresses above work exactly as written. The code
-lives in this directory on the host, so your editor works normally. The Fleet
-emulator and the HangryHippo sandbox come from a prebuilt image: their source is not
-in this repo, this README is their contract, and they are deterministic.
+`make` runs everything in a container on the stack's network, so the `localhost`
+addresses above work as written; edit on the host as normal. The Fleet emulator
+and the HangryHippo sandbox come from a prebuilt image, and this README is their
+contract.
 
 ## Testing
 
@@ -141,7 +142,6 @@ to you.
 | Level | Exercises | Needs |
 |---|---|---|
 | unit | the code on its own, with anything external faked | the dev container only |
-| integration | the code against one real dependency: the broker, the fleet or HangryHippo | `make up` |
 | e2e | the whole path: a change published to the fleet exchange, through the consumer, to what HangryHippo ends up believing | `make up`, and `make run` stopped |
 
 `make test <lang> e2e` starts the consumer itself, runs the e2e tests against
@@ -158,20 +158,17 @@ These endpoints exist only in the local stack, for tests:
 | `POST localhost:4002/v1/_debug/reset` | clears everything HangryHippo believes, and its call log |
 | `GET localhost:4002/v1/_debug/calls` | every availability write HangryHippo received, with its status and duration |
 
-The starter e2e test stops traffic, purges the queue and resets HangryHippo before
-it runs, then turns traffic back on.
-
 ## Language skeletons
 
 One per language, with the AMQP client already installed in the container.
 
-| Language | Start | Runs as | Tests live in | Levels selected by |
-|---|---|---|---|---|
-| TypeScript / Node | `make run typescript` | `node server.ts` | `test/unit`, `test/integration`, `test/e2e` | directory |
-| Go | `make run go` | `go run .` | `*_test.go` next to `main.go` | name: `TestIntegration...`, `TestE2E...`, anything else is unit |
-| Python | `make run python` | `python3 server.py` | `tests/unit`, `tests/integration`, `tests/e2e` | directory |
-| C# | `make run csharp` | `dotnet run` | `tests/`, an xUnit project | `[Trait("Category", "integration")]` or `"e2e"`, none is unit |
-| Java | `make run java` | `javac && java Server` | `*Test.java` next to `Server.java` | JUnit 5 `@Tag("integration")` or `@Tag("e2e")`, none is unit |
+| Language | Tests live in | e2e tests are |
+|---|---|---|
+| TypeScript / Node | `test/unit`, `test/e2e` | in `test/e2e` |
+| Go | `*_test.go` next to `main.go` | named `TestE2E...` |
+| Python | `tests/unit`, `tests/e2e` | in `tests/e2e` |
+| C# | `tests/`, an xUnit project | `[Trait("Category", "e2e")]` |
+| Java | `*Test.java` next to `Server.java` | JUnit 5 `@Tag("e2e")` |
 
 The TypeScript one is real TypeScript. Node runs it directly and `tsc --noEmit`
 is on the path.
