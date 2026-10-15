@@ -19,7 +19,14 @@ flowchart LR
   S -->|serial to vehicle id| Fleet
   S -->|PUT availability| HH[HangryHippo Supply API]
   HH -->|offers runs to available vehicles| D[HangryHippo dispatcher]
+
+  classDef editable fill:#d1fae5,stroke:#059669,stroke-width:2px,color:#064e3b
+  classDef partner fill:#fde68a,stroke:#b45309,color:#78350f
+  class S editable
+  class HH,D partner
 ```
+
+Green is this service, the only box you change. Amber is HangryHippo's.
 
 ## Getting started
 
