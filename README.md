@@ -164,18 +164,3 @@ These endpoints exist only in the local stack, for tests:
 | `GET localhost:4001/v1/_debug/emitted` | the last 60 changes the fleet published, in publish order |
 | `POST localhost:4002/v1/_debug/reset` | clears everything HangryHippo believes, and its call log |
 | `GET localhost:4002/v1/_debug/calls` | every availability write HangryHippo received, with its status and duration |
-
-## Language skeletons
-
-One per language, with the AMQP client already installed in the container.
-
-| Language | Tests live in | e2e tests are |
-|---|---|---|
-| TypeScript / Node | `test/unit`, `test/e2e` | in `test/e2e` |
-| Go | `*_test.go` next to `main.go` | named `TestE2E...` |
-| Python | `tests/unit`, `tests/e2e` | in `tests/e2e` |
-| C# | `tests/`, an xUnit project | `[Trait("Category", "e2e")]` |
-| Java | `*Test.java` next to `Server.java` | JUnit 5 `@Tag("e2e")` |
-
-The TypeScript one is real TypeScript. Node runs it directly and `tsc --noEmit`
-is on the path.
