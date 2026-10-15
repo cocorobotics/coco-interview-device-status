@@ -1,4 +1,7 @@
+import json
 import time
+import uuid
+from datetime import datetime, timezone
 
 import pika
 import pytest
@@ -19,17 +22,18 @@ def quiet_stack():
 
 
 def publish_change(serial, status, limiting_factors):
-    res = post(f"{CONFIG['fleet_url']}/v1/_debug/changes", {
-        "serial": serial,
-        "status": status,
-        "limitingFactors": limiting_factors,
-    })
-    assert res["status"] == 200, f"fleet did not publish the change: {res}"
-
-
-def hangry_hippo_calls(vehicle_id):
-    res = get(f"{CONFIG['partner_url']}/v1/_debug/calls")
-    return [call for call in res["body"]["calls"] if call["vehicleId"] == vehicle_id]
+    with pika.BlockingConnection(pika.URLParameters(CONFIG["amqp_url"])) as conn:
+        conn.channel().basic_publish(
+            exchange="fleet",
+            routing_key="device.status.changed",
+            body=json.dumps({
+                "serial": serial,
+                "status": status,
+                "limitingFactors": limiting_factors,
+                "observedAt": datetime.now(timezone.utc).isoformat(timespec="milliseconds").replace("+00:00", "Z"),
+            }),
+            properties=pika.BasicProperties(message_id=f"chg_e2e_{uuid.uuid4().hex[:12]}", content_type="application/json"),
+        )
 
 
 def availability_once_written(vehicle_id, timeout_s=20):

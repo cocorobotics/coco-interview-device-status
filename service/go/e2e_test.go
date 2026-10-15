@@ -1,8 +1,14 @@
 package main
 
 import (
+	"context"
+	"crypto/rand"
+	"encoding/hex"
+	"encoding/json"
 	"testing"
 	"time"
+
+	amqp "github.com/rabbitmq/amqp091-go"
 )
 
 func quietStack(t *testing.T) {
@@ -26,33 +32,25 @@ func quietStack(t *testing.T) {
 
 func publishChange(t *testing.T, serial, status string, limitingFactors []string) {
 	t.Helper()
-	res, err := Post(config.FleetURL+"/v1/_debug/changes", map[string]any{
-		"serial":          serial,
-		"status":          status,
-		"limitingFactors": limitingFactors,
+	body, _ := json.Marshal(StatusChange{
+		Serial:          serial,
+		Status:          status,
+		LimitingFactors: limitingFactors,
+		ObservedAt:      time.Now().UTC().Format("2006-01-02T15:04:05.000Z"),
+	})
+	id := make([]byte, 6)
+	rand.Read(id)
+
+	conn, ch := connect()
+	defer conn.Close()
+	err := ch.PublishWithContext(context.Background(), "fleet", "device.status.changed", false, false, amqp.Publishing{
+		MessageId:   "chg_e2e_" + hex.EncodeToString(id),
+		ContentType: "application/json",
+		Body:        body,
 	})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if res.Status != 200 {
-		t.Fatalf("fleet did not publish the change: %d %v", res.Status, res.Body)
-	}
-}
-
-func hangryHippoCalls(t *testing.T, vehicleID string) []map[string]any {
-	t.Helper()
-	res, err := Get(config.PartnerURL + "/v1/_debug/calls")
-	if err != nil {
-		t.Fatal(err)
-	}
-	calls, _ := res.Body["calls"].([]any)
-	var out []map[string]any
-	for _, c := range calls {
-		if call, ok := c.(map[string]any); ok && call["vehicleId"] == vehicleID {
-			out = append(out, call)
-		}
-	}
-	return out
 }
 
 // Returns nil when HangryHippo has recorded nothing for the vehicle within the timeout.

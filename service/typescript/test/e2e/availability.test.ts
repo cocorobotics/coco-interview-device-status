@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, test } from "node:test";
 import assert from "node:assert/strict";
+import { randomBytes } from "node:crypto";
 import { setTimeout as sleep } from "node:timers/promises";
 import amqp from "amqplib";
 
@@ -20,20 +21,15 @@ afterEach(async () => {
 });
 
 async function publishChange(serial: string, status: StatusChange["status"], limitingFactors: string[]): Promise<void> {
-  const res = await post(`${config.fleetUrl}/v1/_debug/changes`, { serial, status, limitingFactors });
-  assert.equal(res.status, 200, `fleet did not publish the change: ${JSON.stringify(res.body)}`);
-}
-
-interface HangryHippoCall {
-  vehicleId: string;
-  available: boolean;
-  status: number;
-  durationMs: number;
-}
-
-async function hangryHippoCalls(vehicleId: string): Promise<HangryHippoCall[]> {
-  const res = await get<{ calls: HangryHippoCall[] }>(`${config.partnerUrl}/v1/_debug/calls`);
-  return (res.body?.calls ?? []).filter((call) => call.vehicleId === vehicleId);
+  const change: StatusChange = { serial, status, limitingFactors, observedAt: new Date().toISOString() };
+  const conn = await amqp.connect(config.amqpUrl);
+  const channel = await conn.createConfirmChannel();
+  channel.publish("fleet", "device.status.changed", Buffer.from(JSON.stringify(change)), {
+    messageId: `chg_e2e_${randomBytes(6).toString("hex")}`,
+    contentType: "application/json",
+  });
+  await channel.waitForConfirms();
+  await conn.close();
 }
 
 async function availabilityOnceWritten(vehicleId: string, timeoutMs = 20_000): Promise<boolean | undefined> {
