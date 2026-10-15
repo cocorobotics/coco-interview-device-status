@@ -1,6 +1,4 @@
-using System.Text;
 using System.Text.Json;
-using RabbitMQ.Client;
 
 [Trait("Category", "e2e")]
 public class AvailabilityE2ETests : IAsyncLifetime
@@ -19,16 +17,18 @@ public class AvailabilityE2ETests : IAsyncLifetime
 
     public async Task DisposeAsync() => await Http.Post($"{Config.FleetUrl}/v1/_debug/traffic", new { enabled = true });
 
-    static void PublishChange(string serial, string status, string[] limitingFactors)
+    static async Task PublishChange(string serial, string status, string[] limitingFactors)
     {
-        var change = new StatusChange(serial, status, limitingFactors, DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ss.fffZ"));
-        using var channel = Amqp.Connect(Config.AmqpUrl);
-        channel.ConfirmSelect();
-        var properties = channel.CreateBasicProperties();
-        properties.MessageId = $"chg_e2e_{Guid.NewGuid():N}"[..20];
-        properties.ContentType = "application/json";
-        channel.BasicPublish("fleet", "device.status.changed", properties, Encoding.UTF8.GetBytes(JsonSerializer.Serialize(change, Http.JsonOptions)));
-        channel.WaitForConfirmsOrDie(TimeSpan.FromSeconds(5));
+        var res = await Http.Post($"{Config.FleetUrl}/v1/_debug/changes", new { serial, status, limitingFactors });
+        Assert.True(res.Status == 200, $"fleet did not publish the change: {res.Status} {res.Body}");
+    }
+
+    static async Task<List<JsonElement>> HangryHippoCalls(string vehicleId)
+    {
+        var res = await Http.Get($"{Config.PartnerUrl}/v1/_debug/calls");
+        return res.Body?.GetProperty("calls").EnumerateArray()
+            .Where(call => call.GetProperty("vehicleId").GetString() == vehicleId)
+            .ToList() ?? [];
     }
 
     // Null when HangryHippo has recorded nothing for the vehicle within the timeout.
@@ -50,7 +50,7 @@ public class AvailabilityE2ETests : IAsyncLifetime
     [Fact(DisplayName = "given a robot online with nothing blocking it, when the fleet publishes that change, then HangryHippo shows it available")]
     public async Task OnlineRobotWithNothingBlockingIsAvailable()
     {
-        PublishChange("C10393", "ONLINE", []);
+        await PublishChange("C10393", "ONLINE", []);
 
         Assert.True(await AvailabilityOnceWritten("veh_8f21c4"));
     }

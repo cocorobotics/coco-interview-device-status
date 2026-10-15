@@ -1,4 +1,5 @@
-import com.rabbitmq.client.AMQP;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 import com.rabbitmq.client.Channel;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -6,12 +7,9 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
-import java.nio.charset.StandardCharsets;
-import java.time.Instant;
-import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -35,22 +33,22 @@ class AvailabilityE2ETest {
     }
 
     static void publishChange(String serial, String status, List<String> limitingFactors) throws Exception {
-        Map<String, Object> change = Map.of(
+        Server.Response res = Server.post(Server.FLEET_URL + "/v1/_debug/changes", Map.of(
                 "serial", serial,
                 "status", status,
-                "limitingFactors", limitingFactors,
-                "observedAt", Instant.now().truncatedTo(ChronoUnit.MILLIS).toString());
-        AMQP.BasicProperties properties = new AMQP.BasicProperties.Builder()
-                .messageId("chg_e2e_" + UUID.randomUUID().toString().replace("-", "").substring(0, 12))
-                .contentType("application/json")
-                .build();
+                "limitingFactors", limitingFactors));
+        assertEquals(200, res.status(), "fleet did not publish the change: " + res.body());
+    }
 
-        Channel channel = Server.connect();
-        channel.confirmSelect();
-        channel.basicPublish("fleet", "device.status.changed", properties,
-                Server.JSON.toJson(change).getBytes(StandardCharsets.UTF_8));
-        channel.waitForConfirmsOrDie(5000);
-        channel.getConnection().close();
+    static List<JsonObject> hangryHippoCalls(String vehicleId) throws Exception {
+        Server.Response res = Server.get(Server.PARTNER_URL + "/v1/_debug/calls");
+        List<JsonObject> out = new ArrayList<>();
+        for (JsonElement call : res.body().getAsJsonObject().getAsJsonArray("calls")) {
+            if (call.getAsJsonObject().get("vehicleId").getAsString().equals(vehicleId)) {
+                out.add(call.getAsJsonObject());
+            }
+        }
+        return out;
     }
 
     // Null when HangryHippo has recorded nothing for the vehicle within the timeout.

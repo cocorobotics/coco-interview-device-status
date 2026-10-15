@@ -156,11 +156,13 @@ it, and stops it afterwards, so stop `make run` first. If a test fails, the tail
 of the consumer's output is printed after the results. The starter e2e test
 fails until the consumer writes availability to HangryHippo.
 
-These endpoints exist only in the local stack, for tests:
+These endpoints exist only in the local stack, for tests. For a look by hand,
+`make state` and `make reset` wrap them.
 
 | Endpoint | Does |
 |---|---|
 | `POST localhost:4001/v1/_debug/traffic` | `{"enabled": false}` stops the fleet publishing, `true` resumes it |
+| `POST localhost:4001/v1/_debug/changes` | `{"serial", "status", "limitingFactors"}` updates the fleet's record for that robot and publishes the change once |
 | `GET localhost:4001/v1/_debug/emitted` | the last 60 changes the fleet published, in publish order |
 | `POST localhost:4002/v1/_debug/reset` | clears everything HangryHippo believes, and its call log |
 | `GET localhost:4002/v1/_debug/calls` | every availability write HangryHippo received, with its status and duration |
