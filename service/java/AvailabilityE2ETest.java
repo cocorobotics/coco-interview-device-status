@@ -67,7 +67,7 @@ class AvailabilityE2ETest {
     }
 
     @Test
-    @DisplayName("given a robot online with nothing blocking it, when the fleet publishes that change, then HangryHippo shows it available")
+    @DisplayName("given a robot online with nothing blocking it, when Fleet publishes that change, then HangryHippo shows it available")
     void onlineRobotWithNothingBlockingIsAvailable() throws Exception {
         publishChange("C10393", "ONLINE", List.of());
 

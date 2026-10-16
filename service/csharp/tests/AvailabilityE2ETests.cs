@@ -47,7 +47,7 @@ public class AvailabilityE2ETests : IAsyncLifetime
         return null;
     }
 
-    [Fact(DisplayName = "given a robot online with nothing blocking it, when the fleet publishes that change, then HangryHippo shows it available")]
+    [Fact(DisplayName = "given a robot online with nothing blocking it, when Fleet publishes that change, then HangryHippo shows it available")]
     public async Task OnlineRobotWithNothingBlockingIsAvailable()
     {
         PublishChange("C10393", "ONLINE", []);

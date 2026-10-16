@@ -46,7 +46,7 @@ def availability_once_written(vehicle_id, timeout_s=20):
     return None
 
 
-def test_given_a_robot_online_with_nothing_blocking_it_when_the_fleet_publishes_that_change_then_hangry_hippo_shows_it_available(quiet_stack):
+def test_given_a_robot_online_with_nothing_blocking_it_when_fleet_publishes_that_change_then_hangry_hippo_shows_it_available(quiet_stack):
     publish_change("C10393", "ONLINE", [])
 
     assert availability_once_written("veh_8f21c4") is True

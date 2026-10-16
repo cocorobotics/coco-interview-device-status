@@ -67,7 +67,7 @@ func availabilityOnceWritten(vehicleID string, timeout time.Duration) *bool {
 	return nil
 }
 
-func TestE2EGivenARobotOnlineWithNothingBlockingItWhenTheFleetPublishesThatChangeThenHangryHippoShowsItAvailable(t *testing.T) {
+func TestE2EGivenARobotOnlineWithNothingBlockingItWhenFleetPublishesThatChangeThenHangryHippoShowsItAvailable(t *testing.T) {
 	quietStack(t)
 
 	publishChange(t, "C10393", "ONLINE", []string{})
