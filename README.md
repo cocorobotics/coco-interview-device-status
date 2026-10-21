@@ -126,49 +126,18 @@ to you.
 
 ### How an e2e run works
 
-`make test <lang> e2e` does the following:
+`make test <lang> e2e` starts your consumer, runs the e2e tests against it, and
+stops it. If a test fails, the tail of the consumer's output follows the
+results.
 
-1. Checks nothing else is consuming `device-status`. A consumer left running by
-   `make run` would take some of the test's messages, so the run stops if it
-   finds one.
-2. Starts your consumer in the background, exactly as `make run` would, and
-   waits for it to attach to the queue.
-3. Runs the e2e tests against it.
-4. Stops the consumer. If a test failed, it prints the last 40 lines of the
-   consumer's output after the results; the full log is in
-   `/tmp/e2e-consumer.log` inside the container.
+Each test pauses Fleet's traffic, purges `device-status` and clears HangryHippo,
+then publishes a status change and polls HangryHippo for what your consumer
+wrote. Those steps are helpers in a file beside the tests, so a new test is a
+publish, a wait and an assertion.
 
-Each e2e test then follows the same shape:
-
-1. **Isolate the test.** Stop Fleet's background traffic, purge `device-status`,
-   wait two seconds for anything your consumer already had in flight, then
-   clear HangryHippo's state. From here on, every message on the queue and every
-   write HangryHippo records comes from the test.
-2. **Publish a status change** to the `fleet` exchange with routing key
-   `device.status.changed`, the same way Fleet does. It reaches your consumer
-   through the `device-status` queue like any other change.
-3. **Poll HangryHippo** with `GET /v1/vehicles/{vehicleId}/availability` until
-   something has been written for the vehicle, or give up after 20 seconds.
-4. **Assert** on what HangryHippo ends up believing.
-5. Turn Fleet's traffic back on.
-
-The test files hold only the tests. The steps above are helpers in a file next
-to them, so a new test is a publish, a wait and an assertion:
-
-| Language | Tests | Helpers |
-|---|---|---|
-| go | `e2e_test.go` (names start `TestE2E`) | `e2e_stack_test.go` |
-| typescript | `test/e2e/*.test.ts` | `test/e2e/stack.ts` |
-| python | `tests/e2e/test_*.py` | `tests/e2e/stack.py`, with the fixture in `tests/e2e/conftest.py` |
-| java | `AvailabilityE2ETest.java` (tagged `e2e`) | `E2EStack.java` |
-| csharp | `tests/AvailabilityE2ETests.cs` (trait `Category=e2e`) | `tests/E2EStack.cs` |
-
-The e2e tests share one stack, so they run one at a time. Each isolates itself
-before it starts, so their order does not matter. Isolation covers the queue and
-HangryHippo only: your consumer runs for the whole of `make test <lang> e2e`, so
-anything it holds in memory carries from one test into the next. Fleet's seed data
-maps `C10393` to HangryHippo vehicle `veh_8f21c4`; `GET /v1/devices` on Fleet
-lists the other robots you can use.
+Tests run one at a time. Your consumer keeps running between them, so anything
+it holds in memory carries over. Fleet maps `C10393` to `veh_8f21c4`;
+`GET /v1/devices` lists the other robots.
 
 The starter e2e test fails until the consumer writes availability to
 HangryHippo.
