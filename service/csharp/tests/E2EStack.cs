@@ -33,6 +33,16 @@ static class E2EStack
         channel.WaitForConfirmsOrDie(TimeSpan.FromSeconds(5));
     }
 
+    public static async Task<string> GetVehicleId(string serial)
+    {
+        var res = await Http.Get($"{Config.FleetUrl}/v1/devices/{serial}/partner-accounts/hangry-hippo");
+        if (res.Status != 200)
+        {
+            throw new InvalidOperationException($"Fleet has no HangryHippo vehicle for {serial}: status {res.Status}");
+        }
+        return res.Body!.Value.GetProperty("vehicleId").GetString()!;
+    }
+
     // Null while HangryHippo has had nothing written for the vehicle.
     public static async Task<bool?> GetAvailability(string vehicleId)
     {

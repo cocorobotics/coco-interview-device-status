@@ -30,6 +30,12 @@ export async function publishChange(serial: string, status: StatusChange["status
   await conn.close();
 }
 
+export async function getVehicleId(serial: string): Promise<string> {
+  const res = await get<{ vehicleId: string }>(`${config.fleetUrl}/v1/devices/${serial}/partner-accounts/hangry-hippo`);
+  if (res.status !== 200 || !res.body) throw new Error(`Fleet has no HangryHippo vehicle for ${serial}: status ${res.status}`);
+  return res.body.vehicleId;
+}
+
 // Undefined while HangryHippo has had nothing written for the vehicle.
 export async function getAvailability(vehicleId: string): Promise<boolean | undefined> {
   const res = await get<{ available: boolean }>(`${config.partnerUrl}/v1/vehicles/${vehicleId}/availability`);

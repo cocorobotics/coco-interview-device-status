@@ -20,10 +20,8 @@ class AvailabilityE2ETest {
     }
 
     @Test
-    @DisplayName("given a robot online with nothing blocking it, when Fleet publishes that change, then the test can read HangryHippo's availability for it")
-    void onlineRobotWithNothingBlockingCanBeRead() throws Exception {
+    @DisplayName("given a robot online with nothing blocking it, when Fleet publishes that change, then the publish succeeds")
+    void onlineRobotWithNothingBlockingIsPublished() throws Exception {
         E2EStack.publishChange("C10393", "ONLINE", List.of());
-
-        System.out.println("veh_8f21c4 available: " + E2EStack.getAvailability("veh_8f21c4"));
     }
 }

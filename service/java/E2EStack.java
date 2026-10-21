@@ -43,6 +43,14 @@ final class E2EStack {
         channel.getConnection().close();
     }
 
+    static String getVehicleId(String serial) throws Exception {
+        Server.Response res = Server.get(Server.FLEET_URL + "/v1/devices/" + serial + "/partner-accounts/hangry-hippo");
+        if (res.status() != 200) {
+            throw new AssertionError("Fleet has no HangryHippo vehicle for " + serial + ": status " + res.status());
+        }
+        return res.body().getAsJsonObject().get("vehicleId").getAsString();
+    }
+
     // Null while HangryHippo has had nothing written for the vehicle.
     static Boolean getAvailability(String vehicleId) throws Exception {
         Server.Response res = Server.get(Server.PARTNER_URL + "/v1/vehicles/" + vehicleId + "/availability");

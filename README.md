@@ -132,8 +132,8 @@ results.
 
 Each test pauses Fleet's traffic, purges `device-status` and clears
 HangryHippo's state, then publishes a status change. Helpers for those steps,
-and for reading HangryHippo's availability for a vehicle, sit in a file beside
-the tests.
+for looking up a robot's HangryHippo vehicle id and for reading HangryHippo's
+availability for a vehicle, sit in a file beside the tests.
 
 Tests run one at a time. Your consumer keeps running between them, so anything
 it holds in memory carries over. Fleet maps `C10393` to `veh_8f21c4`;
