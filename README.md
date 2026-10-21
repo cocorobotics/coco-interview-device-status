@@ -131,9 +131,13 @@ stops it. If a test fails, the tail of the consumer's output follows the
 results.
 
 Each test pauses Fleet's traffic, purges `device-status` and clears
-HangryHippo's state, then publishes a status change. Helpers for those steps,
-and wrappers for the Fleet partner-account and HangryHippo availability `GET`s,
-sit in a file beside the tests.
+HangryHippo's state, then publishes a status change.
+
+Helpers for writing e2e tests sit beside them: `e2e_helpers_test.go`,
+`test/e2e/helpers.ts`, `tests/e2e/helpers.py`, `E2EHelpers.java` or
+`tests/E2EHelpers.cs`. They isolate a test, publish a status change, and wrap
+the `GET`s for a robot's HangryHippo account on Fleet and a vehicle's
+availability on HangryHippo.
 
 Tests run one at a time. Your consumer keeps running between them, so anything
 it holds in memory carries over. Fleet maps `C10393` to `veh_8f21c4`;
