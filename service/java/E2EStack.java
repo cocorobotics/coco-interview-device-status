@@ -43,16 +43,9 @@ final class E2EStack {
         channel.getConnection().close();
     }
 
-    // Null when HangryHippo has recorded nothing for the vehicle within the timeout.
-    static Boolean availabilityOnceWritten(String vehicleId, long timeoutMs) throws Exception {
-        long deadline = System.currentTimeMillis() + timeoutMs;
-        while (System.currentTimeMillis() < deadline) {
-            Server.Response res = Server.get(Server.PARTNER_URL + "/v1/vehicles/" + vehicleId + "/availability");
-            if (res.status() == 200) {
-                return res.body().getAsJsonObject().get("available").getAsBoolean();
-            }
-            Thread.sleep(250);
-        }
-        return null;
+    // Null while HangryHippo has had nothing written for the vehicle.
+    static Boolean getAvailability(String vehicleId) throws Exception {
+        Server.Response res = Server.get(Server.PARTNER_URL + "/v1/vehicles/" + vehicleId + "/availability");
+        return res.status() == 200 ? res.body().getAsJsonObject().get("available").getAsBoolean() : null;
     }
 }

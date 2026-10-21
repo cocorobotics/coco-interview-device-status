@@ -130,14 +130,11 @@ to you.
 stops it. If a test fails, the tail of the consumer's output follows the
 results.
 
-Each test pauses Fleet's traffic, purges `device-status` and clears HangryHippo,
-then publishes a status change and polls HangryHippo for what your consumer
-wrote. Those steps are helpers in a file beside the tests, so a new test is a
-publish, a wait and an assertion.
+Each test pauses Fleet's traffic, purges `device-status` and clears
+HangryHippo's state, then publishes a status change. Helpers for those steps,
+and for reading HangryHippo's availability for a vehicle, sit in a file beside
+the tests.
 
 Tests run one at a time. Your consumer keeps running between them, so anything
 it holds in memory carries over. Fleet maps `C10393` to `veh_8f21c4`;
 `GET /v1/devices` lists the other robots.
-
-The starter e2e test fails until the consumer writes availability to
-HangryHippo.

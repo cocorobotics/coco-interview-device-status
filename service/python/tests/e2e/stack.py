@@ -36,11 +36,7 @@ def publish_change(serial, status, limiting_factors):
         )
 
 
-def availability_once_written(vehicle_id, timeout_s=20):
-    deadline = time.monotonic() + timeout_s
-    while time.monotonic() < deadline:
-        res = get(f"{CONFIG['partner_url']}/v1/vehicles/{vehicle_id}/availability")
-        if res["status"] == 200:
-            return res["body"]["available"]
-        time.sleep(0.25)
-    return None
+# None while HangryHippo has had nothing written for the vehicle.
+def get_availability(vehicle_id):
+    res = get(f"{CONFIG['partner_url']}/v1/vehicles/{vehicle_id}/availability")
+    return res["body"]["available"] if res["status"] == 200 else None

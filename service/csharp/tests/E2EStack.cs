@@ -33,19 +33,10 @@ static class E2EStack
         channel.WaitForConfirmsOrDie(TimeSpan.FromSeconds(5));
     }
 
-    // Null when HangryHippo has recorded nothing for the vehicle within the timeout.
-    public static async Task<bool?> AvailabilityOnceWritten(string vehicleId, int timeoutMs = 20_000)
+    // Null while HangryHippo has had nothing written for the vehicle.
+    public static async Task<bool?> GetAvailability(string vehicleId)
     {
-        var deadline = DateTime.UtcNow.AddMilliseconds(timeoutMs);
-        while (DateTime.UtcNow < deadline)
-        {
-            var res = await Http.Get($"{Config.PartnerUrl}/v1/vehicles/{vehicleId}/availability");
-            if (res.Status == 200)
-            {
-                return res.Body?.GetProperty("available").GetBoolean();
-            }
-            await Task.Delay(250);
-        }
-        return null;
+        var res = await Http.Get($"{Config.PartnerUrl}/v1/vehicles/{vehicleId}/availability");
+        return res.Status == 200 ? res.Body?.GetProperty("available").GetBoolean() : null;
     }
 }

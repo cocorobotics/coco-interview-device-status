@@ -30,12 +30,8 @@ export async function publishChange(serial: string, status: StatusChange["status
   await conn.close();
 }
 
-export async function availabilityOnceWritten(vehicleId: string, timeoutMs = 20_000): Promise<boolean | undefined> {
-  const deadline = Date.now() + timeoutMs;
-  while (Date.now() < deadline) {
-    const res = await get<{ available: boolean }>(`${config.partnerUrl}/v1/vehicles/${vehicleId}/availability`);
-    if (res.status === 200) return res.body?.available;
-    await sleep(250);
-  }
-  return undefined;
+// Undefined while HangryHippo has had nothing written for the vehicle.
+export async function getAvailability(vehicleId: string): Promise<boolean | undefined> {
+  const res = await get<{ available: boolean }>(`${config.partnerUrl}/v1/vehicles/${vehicleId}/availability`);
+  return res.status === 200 ? res.body?.available : undefined;
 }

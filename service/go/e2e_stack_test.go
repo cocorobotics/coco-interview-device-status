@@ -53,16 +53,16 @@ func publishChange(t *testing.T, serial, status string, limitingFactors []string
 	}
 }
 
-// Returns nil when HangryHippo has recorded nothing for the vehicle within the timeout.
-func availabilityOnceWritten(vehicleID string, timeout time.Duration) *bool {
-	deadline := time.Now().Add(timeout)
-	for time.Now().Before(deadline) {
-		res, err := Get(config.PartnerURL + "/v1/vehicles/" + vehicleID + "/availability")
-		if err == nil && res.Status == 200 {
-			available, _ := res.Body["available"].(bool)
-			return &available
-		}
-		time.Sleep(250 * time.Millisecond)
+// recorded is false while HangryHippo has had nothing written for the vehicle.
+func availability(t *testing.T, vehicleID string) (available, recorded bool) {
+	t.Helper()
+	res, err := Get(config.PartnerURL + "/v1/vehicles/" + vehicleID + "/availability")
+	if err != nil {
+		t.Fatal(err)
 	}
-	return nil
+	if res.Status != 200 {
+		return false, false
+	}
+	available, _ = res.Body["available"].(bool)
+	return available, true
 }
