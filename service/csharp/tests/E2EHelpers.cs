@@ -5,7 +5,7 @@ using RabbitMQ.Client;
 // The e2e tests share one queue and one HangryHippo, so no two may run at once.
 [assembly: CollectionBehavior(DisableTestParallelization = true)]
 
-static class E2EStack
+static class E2EHelpers
 {
     public static async Task IsolateTest()
     {

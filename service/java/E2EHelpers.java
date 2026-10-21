@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-final class E2EStack {
+final class E2EHelpers {
 
     static void isolateTest() throws Exception {
         Server.post(Server.FLEET_URL + "/v1/_debug/traffic", Map.of("enabled", false));

@@ -1,6 +1,6 @@
 import pytest
 
-from stack import isolate_test, resume_traffic
+from helpers import isolate_test, resume_traffic
 
 
 @pytest.fixture

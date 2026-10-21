@@ -11,17 +11,17 @@ class AvailabilityE2ETest {
 
     @BeforeEach
     void isolateTest() throws Exception {
-        E2EStack.isolateTest();
+        E2EHelpers.isolateTest();
     }
 
     @AfterEach
     void resumeTraffic() throws Exception {
-        E2EStack.resumeTraffic();
+        E2EHelpers.resumeTraffic();
     }
 
     @Test
     @DisplayName("given a robot online with nothing blocking it, when Fleet publishes that change, then the publish succeeds")
     void onlineRobotWithNothingBlockingIsPublished() throws Exception {
-        E2EStack.publishChange("C10393", "ONLINE", List.of());
+        E2EHelpers.publishChange("C10393", "ONLINE", List.of());
     }
 }

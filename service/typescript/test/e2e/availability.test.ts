@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, test } from "node:test";
 
-import { isolateTest, publishChange, resumeTraffic } from "./stack.ts";
+import { isolateTest, publishChange, resumeTraffic } from "./helpers.ts";
 
 beforeEach(isolateTest);
 afterEach(resumeTraffic);
