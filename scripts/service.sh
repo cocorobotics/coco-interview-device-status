@@ -26,7 +26,7 @@ run_tests() {
     go:unit) go test -count=1 -skip '^TestE2E' ./... ;;
     go:e2e) go test -count=1 -run '^TestE2E' ./... ;;
 
-    typescript:*) npm install --silent --no-audit --no-fund; node --test "test/$level/**/*.test.ts" ;;
+    typescript:*) npm install --silent --no-audit --no-fund; node --test --test-concurrency=1 "test/$level/**/*.test.ts" ;;
 
     python:*) pytest -q "tests/$level" ;;
 
