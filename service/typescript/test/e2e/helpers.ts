@@ -2,7 +2,7 @@ import { randomBytes } from "node:crypto";
 import { setTimeout as sleep } from "node:timers/promises";
 import amqp from "amqplib";
 
-import { config, get, post, type StatusChange } from "../../server.ts";
+import { config, get, post, type HttpResponse, type StatusChange } from "../../server.ts";
 
 export async function isolateTest(): Promise<void> {
   await post(`${config.fleetUrl}/v1/_debug/traffic`, { enabled: false });
@@ -30,14 +30,10 @@ export async function publishChange(serial: string, status: StatusChange["status
   await conn.close();
 }
 
-export async function getVehicleId(serial: string): Promise<string> {
-  const res = await get<{ vehicleId: string }>(`${config.fleetUrl}/v1/devices/${serial}/partner-accounts/hangry-hippo`);
-  if (res.status !== 200 || !res.body) throw new Error(`Fleet has no HangryHippo vehicle for ${serial}: status ${res.status}`);
-  return res.body.vehicleId;
+export function getPartnerAccount(serial: string): Promise<HttpResponse<{ serial: string; partner: string; vehicleId: string }>> {
+  return get(`${config.fleetUrl}/v1/devices/${serial}/partner-accounts/hangry-hippo`);
 }
 
-// Undefined while HangryHippo has had nothing written for the vehicle.
-export async function getAvailability(vehicleId: string): Promise<boolean | undefined> {
-  const res = await get<{ available: boolean }>(`${config.partnerUrl}/v1/vehicles/${vehicleId}/availability`);
-  return res.status === 200 ? res.body?.available : undefined;
+export function getVehicleAvailability(vehicleId: string): Promise<HttpResponse<{ available: boolean }>> {
+  return get(`${config.partnerUrl}/v1/vehicles/${vehicleId}/availability`);
 }

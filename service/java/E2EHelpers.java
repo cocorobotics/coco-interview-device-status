@@ -43,17 +43,11 @@ final class E2EHelpers {
         channel.getConnection().close();
     }
 
-    static String getVehicleId(String serial) throws Exception {
-        Server.Response res = Server.get(Server.FLEET_URL + "/v1/devices/" + serial + "/partner-accounts/hangry-hippo");
-        if (res.status() != 200) {
-            throw new AssertionError("Fleet has no HangryHippo vehicle for " + serial + ": status " + res.status());
-        }
-        return res.body().getAsJsonObject().get("vehicleId").getAsString();
+    static Server.Response getPartnerAccount(String serial) throws Exception {
+        return Server.get(Server.FLEET_URL + "/v1/devices/" + serial + "/partner-accounts/hangry-hippo");
     }
 
-    // Null while HangryHippo has had nothing written for the vehicle.
-    static Boolean getAvailability(String vehicleId) throws Exception {
-        Server.Response res = Server.get(Server.PARTNER_URL + "/v1/vehicles/" + vehicleId + "/availability");
-        return res.status() == 200 ? res.body().getAsJsonObject().get("available").getAsBoolean() : null;
+    static Server.Response getVehicleAvailability(String vehicleId) throws Exception {
+        return Server.get(Server.PARTNER_URL + "/v1/vehicles/" + vehicleId + "/availability");
     }
 }

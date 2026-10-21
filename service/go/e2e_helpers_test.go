@@ -53,29 +53,10 @@ func publishChange(t *testing.T, serial, status string, limitingFactors []string
 	}
 }
 
-func vehicleID(t *testing.T, serial string) string {
-	t.Helper()
-	res, err := Get(config.FleetURL + "/v1/devices/" + serial + "/partner-accounts/hangry-hippo")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if res.Status != 200 {
-		t.Fatalf("Fleet has no HangryHippo vehicle for %s: status %d", serial, res.Status)
-	}
-	id, _ := res.Body["vehicleId"].(string)
-	return id
+func getPartnerAccount(serial string) (Response, error) {
+	return Get(config.FleetURL + "/v1/devices/" + serial + "/partner-accounts/hangry-hippo")
 }
 
-// recorded is false while HangryHippo has had nothing written for the vehicle.
-func availability(t *testing.T, vehicleID string) (available, recorded bool) {
-	t.Helper()
-	res, err := Get(config.PartnerURL + "/v1/vehicles/" + vehicleID + "/availability")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if res.Status != 200 {
-		return false, false
-	}
-	available, _ = res.Body["available"].(bool)
-	return available, true
+func getVehicleAvailability(vehicleID string) (Response, error) {
+	return Get(config.PartnerURL + "/v1/vehicles/" + vehicleID + "/availability")
 }

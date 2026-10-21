@@ -36,14 +36,9 @@ def publish_change(serial, status, limiting_factors):
         )
 
 
-def get_vehicle_id(serial):
-    res = get(f"{CONFIG['fleet_url']}/v1/devices/{serial}/partner-accounts/hangry-hippo")
-    if res["status"] != 200:
-        raise AssertionError(f"Fleet has no HangryHippo vehicle for {serial}: status {res['status']}")
-    return res["body"]["vehicleId"]
+def get_partner_account(serial):
+    return get(f"{CONFIG['fleet_url']}/v1/devices/{serial}/partner-accounts/hangry-hippo")
 
 
-# None while HangryHippo has had nothing written for the vehicle.
-def get_availability(vehicle_id):
-    res = get(f"{CONFIG['partner_url']}/v1/vehicles/{vehicle_id}/availability")
-    return res["body"]["available"] if res["status"] == 200 else None
+def get_vehicle_availability(vehicle_id):
+    return get(f"{CONFIG['partner_url']}/v1/vehicles/{vehicle_id}/availability")

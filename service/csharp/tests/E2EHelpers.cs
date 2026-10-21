@@ -33,20 +33,9 @@ static class E2EHelpers
         channel.WaitForConfirmsOrDie(TimeSpan.FromSeconds(5));
     }
 
-    public static async Task<string> GetVehicleId(string serial)
-    {
-        var res = await Http.Get($"{Config.FleetUrl}/v1/devices/{serial}/partner-accounts/hangry-hippo");
-        if (res.Status != 200)
-        {
-            throw new InvalidOperationException($"Fleet has no HangryHippo vehicle for {serial}: status {res.Status}");
-        }
-        return res.Body!.Value.GetProperty("vehicleId").GetString()!;
-    }
+    public static Task<Response> GetPartnerAccount(string serial) =>
+        Http.Get($"{Config.FleetUrl}/v1/devices/{serial}/partner-accounts/hangry-hippo");
 
-    // Null while HangryHippo has had nothing written for the vehicle.
-    public static async Task<bool?> GetAvailability(string vehicleId)
-    {
-        var res = await Http.Get($"{Config.PartnerUrl}/v1/vehicles/{vehicleId}/availability");
-        return res.Status == 200 ? res.Body?.GetProperty("available").GetBoolean() : null;
-    }
+    public static Task<Response> GetVehicleAvailability(string vehicleId) =>
+        Http.Get($"{Config.PartnerUrl}/v1/vehicles/{vehicleId}/availability");
 }
