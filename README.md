@@ -5,7 +5,7 @@ Keeps HangryHippo's view of our robots' availability in sync with Fleet.
 This service consumes the status changes Fleet publishes, decides whether each
 robot is available, and writes that to HangryHippo's Supply API.
 
-**Status:** scaffolding only. Each language skeleton connects, consumes, parses
+**Status:** scaffolding only. Each language scaffold connects, consumes, parses
 and acks, and does nothing else yet.
 
 ```mermaid
@@ -32,7 +32,7 @@ make up           # broker, the Fleet emulator and the HangryHippo sandbox
 make run go       # or typescript, python, csharp, java
 ```
 
-We have not settled on a language for this service, so there is a skeleton for
+We have not settled on a language for this service, so there is a scaffold for
 each one we run elsewhere. They are equivalent; use the one you are most
 productive in.
 
@@ -98,14 +98,12 @@ make shell               # a terminal in the container, for a package install
 
 `make` runs everything in a container on the stack's network, so the `localhost`
 addresses above work as written; edit on the host as normal. The Fleet emulator
-and the HangryHippo sandbox come from a prebuilt image, and this README is their
-contract.
+and the HangryHippo sandbox come from a prebuilt image.
 
 ## Testing
 
-Each skeleton comes with one starter test per level. They show where tests live
-and how to reach the stack from them. What you test, and at which level, is up
-to you.
+Each scaffold comes with one starter test per level. They show where tests live
+and how to reach the stack from them.
 
 | Level | Exercises | Needs |
 |---|---|---|
